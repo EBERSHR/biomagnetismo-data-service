@@ -126,6 +126,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PARES_DATA } from './data/pares';
 
+// Imports de Shadcn y Lucide
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { FileText, Copy, Check } from "lucide-react";
 
 // Tipos internos para evitar errores de importación por ahora
 export type CategoriaPar = 'Virus' | 'Bacteria' | 'Parásito' | 'Hongo' | 'Especial' | 'Emocional' | 'Funcional';
@@ -154,13 +165,14 @@ export default function App() {
   const [seleccionados, setSeleccionados] = useState<ParBiomagnetico[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaPar | 'Todos'>('Todos');
 
+  const [copiado, setCopiado] = useState(false);
 
 
 
 
 
   // --- LÓGICA DE PERSISTENCIA (STORAGE) ---
-  
+
   // 1. Cargar datos del disco al iniciar
   useEffect(() => {
     const datosGuardados = localStorage.getItem('sesion_biomagnetismo');
@@ -185,7 +197,7 @@ export default function App() {
   };
 
   const limpiarSesion = () => {
-    if(confirm("¿Deseas borrar todos los pares del paciente actual?")) {
+    if (confirm("¿Deseas borrar todos los pares del paciente actual?")) {
       setSeleccionados([]);
     }
   };
@@ -195,18 +207,42 @@ export default function App() {
   //   par.patogeno.toLowerCase().includes(busqueda.toLowerCase())
   // );
 
-    // Filtrado avanzado
+  // Filtrado avanzado
   const paresFiltrados = PARES_DATA.filter(par => {
-    const cumpleBusqueda = par.puntoNorte.toLowerCase().includes(busqueda.toLowerCase()) || 
-                           par.patogeno.toLowerCase().includes(busqueda.toLowerCase());
+    const cumpleBusqueda = par.puntoNorte.toLowerCase().includes(busqueda.toLowerCase()) ||
+      par.patogeno.toLowerCase().includes(busqueda.toLowerCase());
     const cumpleCategoria = categoriaSeleccionada === 'Todos' || par.categoria === categoriaSeleccionada;
-    
+
     return cumpleBusqueda && cumpleCategoria;
   });
 
+  // Función para generar el texto del reporte
+  const generarTextoReporte = () => {
+    if (seleccionados.length === 0) return "No hay pares seleccionados.";
+
+    const fecha = new Date().toLocaleDateString();
+    let texto = `REPORTE DE BIOMAGNETISMO - FECHA: ${fecha}\n`;
+    texto += `==========================================\n\n`;
+
+    seleccionados.forEach((par, index) => {
+      texto += `${index + 1}. ${par.puntoNorte} - ${par.puntoSur}\n`;
+      texto += `   Patógeno: ${par.patogeno}\n`;
+      texto += `   Categoría: ${par.categoria}\n`;
+      texto += `------------------------------------------\n`;
+    });
+
+    return texto;
+  };
+
+  const copiarAlPortapapeles = () => {
+    navigator.clipboard.writeText(generarTextoReporte());
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000); // Resetear icono tras 2 seg
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+      {/* <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-2 text-blue-700">
           <Magnet size={24} />
           <h1 className="text-xl font-bold">BioData Pro</h1>
@@ -221,12 +257,61 @@ export default function App() {
             </Button>
           )}
         </div>
+      </header> */}
+            <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+        <div className="flex items-center gap-2 text-blue-700">
+          <Magnet size={24} />
+          <h1 className="text-xl font-bold">BioData Pro</h1>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* BOTÓN DE REPORTE (Solo se muestra si hay pares) */}
+          {seleccionados.length > 0 && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100">
+                  <FileText className="w-4 h-4 mr-2" /> Reporte
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Resumen del Rastreo</DialogTitle>
+                  <DialogDescription>
+                    Copia este resumen para tu expediente clínico.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="bg-slate-900 text-slate-100 p-4 rounded-md font-mono text-xs whitespace-pre-wrap max-h-[400px] overflow-y-auto">
+                  {generarTextoReporte()}
+                </div>
+                <Button onClick={copiarAlPortapapeles} className="w-full">
+                  {copiado ? <><Check className="mr-2 h-4 w-4" /> Copiado</> : <><Copy className="mr-2 h-4 w-4" /> Copiar al Portapapeles</>}
+                </Button>
+              </DialogContent>
+            </Dialog>
+          )}
+
+<Badge variant="secondary" className="px-3 py-1 text-sm bg-blue-100 text-blue-800 border-blue-200">
+  <ClipboardList className="w-4 h-4 mr-2" /> {/* <--- Aquí usamos el icono */}
+  {seleccionados.length} Pares Detectados
+</Badge>
+          
+          {seleccionados.length > 0 && (
+  <Button 
+    variant="ghost" 
+    size="sm" 
+    onClick={limpiarSesion} // <--- Aquí conectamos la función
+    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+  >
+    <Trash2 size={18} />
+  </Button>
+          )}
+        </div>
       </header>
 
       <main className="max-w-4xl mx-auto p-6">
-                {/* FILTROS DE CATEGORÍA */}
+        {/* FILTROS DE CATEGORÍA */}
         <div className="flex flex-wrap gap-2 mb-8 justify-center">
-          <Button 
+          <Button
             variant={categoriaSeleccionada === 'Todos' ? "default" : "outline"}
             size="sm"
             onClick={() => setCategoriaSeleccionada('Todos')}
@@ -234,7 +319,7 @@ export default function App() {
             Todos
           </Button>
           {CATEGORIAS.map(cat => (
-            <Button 
+            <Button
               key={cat}
               variant={categoriaSeleccionada === cat ? "default" : "outline"}
               size="sm"
@@ -247,8 +332,8 @@ export default function App() {
         </div>
         <div className="relative mb-8">
           <Search className="absolute left-3 top-3 text-slate-400" size={20} />
-          <Input 
-            placeholder="Buscar punto de rastreo..." 
+          <Input
+            placeholder="Buscar punto de rastreo..."
             className="pl-10 h-12 text-lg shadow-sm"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
@@ -266,7 +351,7 @@ export default function App() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm font-semibold text-blue-600 mb-2">{par.patogeno}</p>
-                <Button 
+                <Button
                   variant={seleccionados.find(p => p.id === par.id) ? "default" : "outline"}
                   className="w-full"
                   onClick={() => togglePar(par)}
@@ -274,6 +359,11 @@ export default function App() {
                   {seleccionados.find(p => p.id === par.id) ? "Quitar del Rastreo" : "Añadir al Rastreo"}
                 </Button>
               </CardContent>
+
+
+
+
+
             </Card>
           ))}
         </div>
