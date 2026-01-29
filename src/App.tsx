@@ -124,9 +124,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PARES_DATA } from './data/pares';
+
 
 // Tipos internos para evitar errores de importación por ahora
 export type CategoriaPar = 'Virus' | 'Bacteria' | 'Parásito' | 'Hongo' | 'Especial' | 'Emocional' | 'Funcional';
+const CATEGORIAS: CategoriaPar[] = ['Virus', 'Bacteria', 'Parásito', 'Hongo', 'Especial', 'Emocional'];
+
 
 export interface ParBiomagnetico {
   id: string;
@@ -139,15 +143,21 @@ export interface ParBiomagnetico {
 }
 
 // Datos de ejemplo (Semilla)
-const PARES_DATA: ParBiomagnetico[] = [
-  { id: "1", puntoNorte: "Timo", puntoSur: "Recto", categoria: "Virus", patogeno: "VIH", descripcion: "Inmunodeficiencia.", sintomas: ["Fiebre"] },
-  { id: "2", puntoNorte: "Hígado", puntoSur: "Hígado", categoria: "Virus", patogeno: "Hepatitis C", descripcion: "Inflamación hepática.", sintomas: ["Fatiga"] },
-  { id: "3", puntoNorte: "Pineal", puntoSur: "Bulbo", categoria: "Especial", patogeno: "Guillain-Barré", descripcion: "Debilidad motriz.", sintomas: ["Parálisis"] }
-];
+// const PARES_DATA: ParBiomagnetico[] = [
+//   { id: "1", puntoNorte: "Timo", puntoSur: "Recto", categoria: "Virus", patogeno: "VIH", descripcion: "Inmunodeficiencia.", sintomas: ["Fiebre"] },
+//   { id: "2", puntoNorte: "Hígado", puntoSur: "Hígado", categoria: "Virus", patogeno: "Hepatitis C", descripcion: "Inflamación hepática.", sintomas: ["Fatiga"] },
+//   { id: "3", puntoNorte: "Pineal", puntoSur: "Bulbo", categoria: "Especial", patogeno: "Guillain-Barré", descripcion: "Debilidad motriz.", sintomas: ["Parálisis"] }
+// ];
 
 export default function App() {
   const [busqueda, setBusqueda] = useState("");
   const [seleccionados, setSeleccionados] = useState<ParBiomagnetico[]>([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaPar | 'Todos'>('Todos');
+
+
+
+
+
 
   // --- LÓGICA DE PERSISTENCIA (STORAGE) ---
   
@@ -180,17 +190,26 @@ export default function App() {
     }
   };
 
-  const paresFiltrados = PARES_DATA.filter(par => 
-    par.puntoNorte.toLowerCase().includes(busqueda.toLowerCase()) ||
-    par.patogeno.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  // const paresFiltrados = PARES_DATA.filter(par => 
+  //   par.puntoNorte.toLowerCase().includes(busqueda.toLowerCase()) ||
+  //   par.patogeno.toLowerCase().includes(busqueda.toLowerCase())
+  // );
+
+    // Filtrado avanzado
+  const paresFiltrados = PARES_DATA.filter(par => {
+    const cumpleBusqueda = par.puntoNorte.toLowerCase().includes(busqueda.toLowerCase()) || 
+                           par.patogeno.toLowerCase().includes(busqueda.toLowerCase());
+    const cumpleCategoria = categoriaSeleccionada === 'Todos' || par.categoria === categoriaSeleccionada;
+    
+    return cumpleBusqueda && cumpleCategoria;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-2 text-blue-700">
           <Magnet size={24} />
-          <h1 className="text-xl font-bold">Clínica-BioData Pro</h1>
+          <h1 className="text-xl font-bold">BioData Pro</h1>
         </div>
         <div className="flex gap-2">
           <Badge variant="secondary" className="px-3 py-1 text-sm">
@@ -205,6 +224,27 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto p-6">
+                {/* FILTROS DE CATEGORÍA */}
+        <div className="flex flex-wrap gap-2 mb-8 justify-center">
+          <Button 
+            variant={categoriaSeleccionada === 'Todos' ? "default" : "outline"}
+            size="sm"
+            onClick={() => setCategoriaSeleccionada('Todos')}
+          >
+            Todos
+          </Button>
+          {CATEGORIAS.map(cat => (
+            <Button 
+              key={cat}
+              variant={categoriaSeleccionada === cat ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCategoriaSeleccionada(cat)}
+              className="rounded-full"
+            >
+              {cat}
+            </Button>
+          ))}
+        </div>
         <div className="relative mb-8">
           <Search className="absolute left-3 top-3 text-slate-400" size={20} />
           <Input 
