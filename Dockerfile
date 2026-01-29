@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+# Esto compila el código TS a JS puro
 RUN npm run build
 
 # Etapa 2: Servidor de producción ligero
